@@ -11,6 +11,27 @@ inputs:
   delete-other-teams:
     description: 'Whether to delete other teams in Fleet which are not part of the gitops config.'
     default: 'true'
+  fleet-url:
+    description: 'Fleet server URL'
+    required: true
+  fleet-api-token:
+    description: 'Fleet API token'
+    required: true
+  fleet-global-enroll-secret:
+    description: 'Global enroll secret'
+    required: false
+  fleet-workstations-enroll-secret:
+    description: 'Workstations team enroll secret'
+    required: false
+  fleet-workstations-canary-enroll-secret:
+    description: 'Workstations canary team enroll secret'
+    required: false
+  fleet-engineering-enroll-secret:
+    description: 'Engineering team enroll secret'
+    required: false
+  fleet-new-hire-enroll-secret:
+    description: 'New hire team enroll secret'
+    required: false
 
 runs:
   using: "composite"
@@ -19,19 +40,19 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        FLEET_VERSION="$(curl "$FLEET_URL/api/v1/fleet/version" --header "Authorization: Bearer $FLEET_API_TOKEN" --fail --silent | jq --raw-output '.version')"
+        FLEET_VERSION="$(curl "${{ inputs.fleet-url }}/api/v1/fleet/version" --header "Authorization: Bearer ${{ inputs.fleet-api-token }}" --fail --silent | jq --raw-output '.version')"
 
         if [[ -n "$FLEET_VERSION" ]] ; then
           npm install -g "fleetctl@$FLEET_VERSION" || npm install -g fleetctl
         else
-          echo "Failed to get Fleet version from $FLEET_URL, installing latest version of fleetctl"
+          echo "Failed to get Fleet version from ${{ inputs.fleet-url }}, installing latest version of fleetctl"
           npm install -g fleetctl
         fi
 
     - name: Configure fleetctl
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: fleetctl config set --address ${{ env.FLEET_URL }} --token ${{ env.FLEET_API_TOKEN }}
+      run: fleetctl config set --address ${{ inputs.fleet-url }} --token ${{ inputs.fleet-api-token }}
 
     - name: Run fleetctl gitops commands
       shell: bash
@@ -39,11 +60,11 @@ runs:
       env:
         FLEET_DRY_RUN_ONLY: ${{ inputs.dry-run-only }}
         FLEET_DELETE_OTHER_TEAMS: ${{ inputs.delete-other-teams }}
-        FLEET_URL: ${{ env.FLEET_URL }}
-        FLEET_API_TOKEN: ${{ env.FLEET_API_TOKEN }}
-        FLEET_GLOBAL_ENROLL_SECRET: ${{ env.FLEET_GLOBAL_ENROLL_SECRET }}
-        FLEET_WORKSTATIONS_ENROLL_SECRET: ${{ env.FLEET_WORKSTATIONS_ENROLL_SECRET }}
-        FLEET_WORKSTATIONS_CANARY_ENROLL_SECRET: ${{ env.FLEET_WORKSTATIONS_CANARY_ENROLL_SECRET }}
-        FLEET_ENGINEERING_ENROLL_SECRET: ${{ env.FLEET_ENGINEERING_ENROLL_SECRET }}
-        FLEET_NEW_HIRE_ENROLL_SECRET: ${{ env.FLEET_NEW_HIRE_ENROLL_SECRET }}
+        FLEET_URL: ${{ inputs.fleet-url }}
+        FLEET_API_TOKEN: ${{ inputs.fleet-api-token }}
+        FLEET_GLOBAL_ENROLL_SECRET: ${{ inputs.fleet-global-enroll-secret }}
+        FLEET_WORKSTATIONS_ENROLL_SECRET: ${{ inputs.fleet-workstations-enroll-secret }}
+        FLEET_WORKSTATIONS_CANARY_ENROLL_SECRET: ${{ inputs.fleet-workstations-canary-enroll-secret }}
+        FLEET_ENGINEERING_ENROLL_SECRET: ${{ inputs.fleet-engineering-enroll-secret }}
+        FLEET_NEW_HIRE_ENROLL_SECRET: ${{ inputs.fleet-new-hire-enroll-secret }}
       run: ./gitops.sh
