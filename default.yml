@@ -23,5 +23,3 @@ org_settings:
     host_expiry_settings:
       host_expiry_enabled: true
       host_expiry_window: 30
-  Fleet_desktop:
-    transparency_url: https:catoftheday.com
